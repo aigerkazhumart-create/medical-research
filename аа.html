@@ -1,0 +1,263 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epigenetic AI Diagnostic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #38bdf8;
+            --glass: rgba(255, 255, 255, 0.9);
+            --gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        .step { display: none; }
+        .step.active { display: block; animation: fadeInRight 0.5s; }
+
+        .hero-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        h2 { color: var(--primary); font-size: 22px; margin-bottom: 20px; }
+
+        .options-grid { display: grid; gap: 12px; }
+
+        .option-btn {
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: white;
+            text-align: left;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-btn:hover {
+            border-color: var(--accent);
+            background: #f0f9ff;
+        }
+
+        .option-btn.selected {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .nav-btns {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button.nav {
+            padding: 12px 30px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-next { background: var(--primary); color: white; }
+        .btn-prev { background: #cbd5e1; color: var(--primary); }
+
+        #resultBox { display: none; text-align: center; }
+        .score-circle {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 20px auto;
+            border: 5px solid var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="card">
+        <div id="quiz-ui">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div id="stepsContainer">
+                </div>
+
+            <div class="nav-btns">
+                <button class="nav btn-prev" id="prevBtn" onclick="changeStep(-1)" style="visibility:hidden">Артқа</button>
+                <button class="nav btn-next" id="nextBtn" onclick="changeStep(1)">Келесі</button>
+            </div>
+        </div>
+
+        <div id="resultBox" class="animate__animated animate__fadeIn">
+            <img src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=400" class="hero-img" alt="AI Analysis">
+            <h2>AI Сараптама Қорытындысы</h2>
+            <div class="score-circle" id="finalScore">0</div>
+            <p id="verdictText" style="font-weight: bold; font-size: 18px;"></p>
+            <p id="adviceText" style="line-height: 1.6; color: #475569; text-align: justify;"></p>
+            <button class="nav btn-next" style="width:100%" onclick="location.reload()">Қайта бастау</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "Сіздің жасыңыз нешеде?", a: ["25–30 жас", "31–40 жас", "41–50 жас", "51–60 жас", "60 жастан жоғары"] },
+        { q: "Жынысыңыз:", a: ["Ер", "Әйел", "Басқа"] },
+        { q: "Денсаулығыңызды қалай бағалайсыз?", a: ["Өте жақсы", "Жақсы", "Орташа", "Нашар", "Өте нашар"] },
+        { q: "Тәулігіне қанша сағат ұйықтайсыз?", a: ["7–8 сағат", "6 сағат", "9 сағаттан көп", "5 сағат немесе аз", "Тұрақсыз"] },
+        { q: "Ұйқы сапасы қандай?", a: ["Терең, сергітіп оянамын", "Жақсы, бірақ кейде шаршаңқы", "Жиі оянамын", "Ұйқысыздық бар", "Ұйықтау өте қиын"] },
+        { q: "Ұйқы режимі тұрақты ма?", a: ["Тұрақты режим", "Көбіне тұрақты", "Кейде бұзылады", "Тұрақсыз", "Түнгі режим"] },
+        { q: "Тамақтану түріңіз қандай?", a: ["Теңгерімді", "Көбіне дұрыс", "Аралас", "Фастфуд жиі", "Өте ретсіз"] },
+        { q: "Көкөніс/жеміс тұтыну жиілігі?", a: ["Күнделікті ≥5 порция", "Күнделікті 2–4", "Аптасына бірнеше рет", "Сирек", "Мүлде жоқ"] },
+        { q: "Қант және өңделген тағамдар?", a: ["Өте сирек", "Аз", "Орташа", "Жиі", "Күнделікті"] },
+        { q: "Су ішу деңгейіңіз?", a: ["≥2 литр/күн", "1.5–2 литр", "1–1.5 литр", "<1 литр", "Есептемеймін"] },
+        { q: "Стресс деңгейіңіз қандай?", a: ["Өте төмен", "Төмен", "Орташа", "Жоғары", "Өте жоғары"] },
+        { q: "Стресті басқара аласыз ба?", a: ["Өте жақсы", "Жақсы", "Орташа", "Нашар", "Мүлде жоқ"] },
+        { q: "Соңғы 6 айдағы эмоционалдық жағдай?", a: ["Тұрақты", "Аздап өзгерген", "Жиі мазасыздық", "Депрессиялық белгілер", "Ауыр стресс"] },
+        { q: "Аптасына спортпен неше рет айналысасыз?", a: ["≥5 рет", "3–4 рет", "1–2 рет", "Сирек", "Мүлде жоқ"] },
+        { q: "Күнделікті орташа қадам саны?", a: [">10 000", "7–10 мың", "5–7 мың", "<5 мың", "Белсенді емеспін"] },
+        { q: "Темекі шегу әдеті?", a: ["Ешқашан", "Бұрын шеккен", "Сирек", "Күнделікті", "Көп мөлшерде"] },
+        { q: "Алкоголь қолдану?", a: ["Мүлде жоқ", "Айына 1 рет", "Аптасына 1 рет", "Жиі", "Өте жиі"] },
+        { q: "Жадыңыздың (память) жағдайы?", a: ["Өте жақсы", "Жақсы", "Орташа", "Нашарлап жатыр", "Айқын бұзылған"] },
+        { q: "Шаршау деңгейіңіз?", a: ["Жоқ", "Сирек", "Кейде", "Жиі", "Тұрақты"] },
+        { q: "Қартаю белгілері (тері, дене)?", a: ["Жоқ", "Аз", "Орташа", "Айқын", "Өте айқын"] },
+        { q: "Эпигенетика туралы білесіз бе?", a: ["Терең білемін", "Білемін", "Аздап", "Естуім бар", "Білмеймін"] },
+        { q: "Биологиялық жасыңызды білгіңіз келе ме?", a: ["Иә, міндетті түрде", "Иә", "Білмеймін", "Қызық емес", "Қажет емес"] },
+        { q: "AI арқылы анализге сенесіз бе?", a: ["Толық сенемін", "Көбіне сенемін", "Бейтарап", "Сенбеймін", "Мүлде сенбеймін"] }
+    ];
+
+    let currentStep = 0;
+    let scores = new Array(questions.length).fill(null);
+
+    function initQuiz() {
+        const container = document.getElementById('stepsContainer');
+        questions.forEach((item, index) => {
+            let stepDiv = document.createElement('div');
+            stepDiv.className = `step ${index === 0 ? 'active' : ''}`;
+            stepDiv.innerHTML = `
+                <h2>${index + 1}. ${item.q}</h2>
+                <div class="options-grid">
+                    ${item.a.map((ans, i) => `
+                        <div class="option-btn" onclick="selectOption(${index}, ${i})">${ans}</div>
+                    `).join('')}
+                </div>
+            `;
+            container.appendChild(stepDiv);
+        });
+    }
+
+    function selectOption(qIdx, aIdx) {
+        scores[qIdx] = aIdx;
+        const currentStepEl = document.querySelectorAll('.step')[qIdx];
+        currentStepEl.querySelectorAll('.option-btn').forEach((btn, i) => {
+            btn.classList.toggle('selected', i === aIdx);
+        });
+        setTimeout(() => changeStep(1), 300);
+    }
+
+    function changeStep(n) {
+        const steps = document.querySelectorAll('.step');
+        if (n === 1 && scores[currentStep] === null) {
+            alert("Жауапты таңдаңыз!");
+            return;
+        }
+
+        steps[currentStep].classList.remove('active');
+        currentStep += n;
+
+        if (currentStep >= questions.length) {
+            showResult();
+            return;
+        }
+
+        steps[currentStep].classList.add('active');
+        document.getElementById('prevBtn').style.visibility = currentStep > 0 ? 'visible' : 'hidden';
+        document.getElementById('nextBtn').innerText = currentStep === questions.length - 1 ? "Аяқтау" : "Келесі";
+        document.getElementById('progressBar').style.width = ((currentStep / questions.length) * 100) + "%";
+    }
+
+    function showResult() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        const resultBox = document.getElementById('resultBox');
+        resultBox.style.display = 'block';
+
+        const totalScore = scores.reduce((a, b) => a + b, 0);
+        document.getElementById('finalScore').innerText = totalScore;
+
+        const verdict = document.getElementById('verdictText');
+        const advice = document.getElementById('adviceText');
+
+        if (totalScore <= 25) {
+            verdict.innerText = "Эпигенетикалық жағдайыңыз: Керемет!";
+            advice.innerText = "AI талдауы бойынша, сіздің өмір салтыңыз ДНҚ метилдену процестерін оңтайлы деңгейде ұстап тұр. Биологиялық жасыңыз паспортыңыздан кіші болуы ықтимал. Осы бағытты сақтаңыз!";
+        } else if (totalScore <= 55) {
+            verdict.innerText = "Эпигенетикалық жағдайыңыз: Орташа";
+            advice.innerText = "Кейбір қауіп факторлары анықталды (стресс немесе ұйқы режимі). Бұл гендердің экспрессиясына әсер етіп, қартаюды тездетуі мүмкін. Көбірек көкөністер мен сапалы ұйқыға мән беріңіз.";
+        } else {
+            verdict.innerText = "Эпигенетикалық жағдайыңыз: Назар аударыңыз!";
+            verdict.style.color = "#ef4444";
+            advice.innerText = "Ағзаңызда молекулалық тозу белгілері басым. Темекі, қант және созылмалы стресс эпигенетикалық сағатты жылдамдатады. Шұғыл түрде өмір салтыңызды реттеу AI тарапынан ұсынылады.";
+        }
+    }
+
+    initQuiz();
+</script>
+
+</body>
+</html>
